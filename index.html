@@ -103,7 +103,7 @@
      LAYOUT PRINCIPAL
   ════════════════════════════════════════ */
   .page {
-    max-width: 960px;
+    max-width: 100%;
     margin: 0 auto;
     padding: 16px 12px 8px;
   }
@@ -562,7 +562,6 @@
     .drawer-overlay { display: none !important; }
 
     .drawer {
-      /* En desktop es un panel estático, no drawer */
       position: static;
       transform: none !important;
       border-radius: var(--radio);
@@ -576,23 +575,21 @@
     .drawer-close  { display: none; }
 
     .page {
-      padding: 20px 20px 32px;
+      padding: 20px 24px 32px;
     }
 
     .desktop-grid {
       display: grid;
-      grid-template-columns: 1fr 320px;
+      grid-template-columns: 1fr 300px;
       gap: 20px;
       align-items: start;
     }
 
-    .desktop-main {}
     .desktop-side {
       position: sticky;
       top: calc(var(--header-h) + 16px);
     }
 
-    /* En desktop los botones van en columna */
     .drawer-acciones {
       grid-template-columns: 1fr;
     }
@@ -600,6 +597,22 @@
     .btn-limpiar { grid-column: 1; }
 
     .header-text h1 { font-size: 26px; }
+  }
+
+  @media (min-width: 1100px) {
+    .desktop-grid {
+      grid-template-columns: 1fr 340px;
+      gap: 28px;
+    }
+    .page { padding: 24px 32px 40px; }
+  }
+
+  @media (min-width: 1400px) {
+    .desktop-grid {
+      grid-template-columns: 1fr 380px;
+      gap: 32px;
+    }
+    .page { padding: 24px 48px 40px; }
   }
 
   /* ════════════════════════════════════════
@@ -1522,3 +1535,4 @@ init();
 </script>
 </body>
 </html>
+
