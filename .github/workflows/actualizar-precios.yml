@@ -1,0 +1,64 @@
+name: Actualizar precios mensuales
+
+on:
+  # Corre el día 1 de cada mes a las 8:00 AM (hora Argentina = UTC-3)
+  schedule:
+    - cron: "0 11 1 * *"
+
+  # También permite correrlo manualmente desde GitHub
+  workflow_dispatch:
+    inputs:
+      motivo:
+        description: "Motivo de la actualización manual"
+        required: false
+        default: "Actualización manual"
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # necesario para hacer commit
+
+    steps:
+      # 1. Clonar el repo
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      # 2. Instalar Python
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Instalar dependencias
+      - name: Instalar dependencias
+        run: |
+          pip install requests beautifulsoup4
+
+      # 4. Correr el script de scraping
+      - name: Actualizar precios desde electroinstalador.com
+        run: |
+          python scripts/actualizar_precios.py
+
+      # 5. Verificar si hubo cambios
+      - name: Verificar cambios
+        id: cambios
+        run: |
+          git diff --quiet index.html && echo "sin_cambios=true" >> $GITHUB_OUTPUT || echo "sin_cambios=false" >> $GITHUB_OUTPUT
+
+      # 6. Commit y push solo si hubo cambios de precios
+      - name: Commit de precios actualizados
+        if: steps.cambios.outputs.sin_cambios == 'false'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          FECHA=$(date +'%B %Y' --locale=es_AR 2>/dev/null || date +'%B %Y')
+          git add index.html scripts/ultimo_scraping.json
+          git commit -m "💰 Actualización de precios — $FECHA"
+          git push
+
+      # 7. Informar si no hubo cambios
+      - name: Sin cambios detectados
+        if: steps.cambios.outputs.sin_cambios == 'true'
+        run: |
+          echo "Los precios no cambiaron respecto al mes anterior. No se realizó commit."
