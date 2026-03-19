@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PresupuestoElec — Calculadora de Mano de Obra</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  /* ─── TOKENS ─── */
+  :root {
+    --negro:   #0d0d0d;
+    --am:      #f5c518;
+    --am-dk:   #d4a914;
+    --g1:      #1a1a1a;
+    --g2:      #222;
+    --g3:      #2e2e2e;
+    --g4:      #3a3a3a;
+    --txt:     #e4e4e4;
+    --dim:     #888;
+    --rojo:    #e84040;
+    --verde:   #2ecc71;
+    --radio:   12px;
+    --header-h: 56px;
+    --bar-h:   68px;   /* barra inferior mobile */
+  }
+
+  /* ─── RESET ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--negro);
+    color: var(--txt);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    /* espacio para la barra fija de abajo en mobile */
+    padding-bottom: var(--bar-h);
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--g4); border-radius: 2px; }
+
+  /* ════════════════════════════════════════
+     HEADER
+  ════════════════════════════════════════ */
+  header {
+    height: var(--header-h);
+    background: var(--negro);
+    border-bottom: 2px solid var(--am);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  .bolt {
+    width: 28px; height: 28px;
+    background: var(--am);
+    clip-path: polygon(60% 0%,100% 0%,40% 50%,100% 50%,20% 100%,0% 100%,60% 50%,0% 50%);
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--am);
+    line-height: 1;
+  }
+  .header-text p {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+
+  .header-source {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--dim);
+    text-align: right;
+    line-height: 1.5;
+    flex-shrink: 0;
+  }
+  .header-source a { color: var(--am); text-decoration: none; }
+  .badge-ok {
+    display: inline-block;
+    background: rgba(46,204,113,.15);
+    border: 1px solid rgba(46,204,113,.3);
+    color: var(--verde);
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    letter-spacing: .3px;
+  }
+
+  /* ════════════════════════════════════════
+     LAYOUT PRINCIPAL
+  ════════════════════════════════════════ */
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 16px 12px 8px;
+  }
+
+  /* ─── Intro ─── */
+  .intro {
+    background: var(--g2);
+    border-left: 3px solid var(--am);
+    padding: 12px 14px;
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    color: var(--dim);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  /* ─── Section label ─── */
+  .label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--am);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  /* ════════════════════════════════════════
+     ZONAS — chips horizontales scrolleables
+  ════════════════════════════════════════ */
+  .zona-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .zona-scroll::-webkit-scrollbar { display: none; }
+
+  .zona-chip {
+    flex-shrink: 0;
+    background: var(--g2);
+    border: 1.5px solid var(--g4);
+    color: var(--dim);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    /* área táctil cómoda */
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+  .zona-chip:active { opacity: .7; }
+  .zona-chip.active {
+    background: var(--am);
+    border-color: var(--am);
+    color: var(--negro);
+    font-weight: 600;
+  }
+
+  .zona-info {
+    font-size: 11.5px;
+    color: var(--dim);
+    margin-bottom: 20px;
+    padding: 0 2px;
+    line-height: 1.5;
+  }
+  .zona-info strong { color: var(--am); }
+
+  /* ════════════════════════════════════════
+     CATEGORÍAS — scroll horizontal sin wrap
+  ════════════════════════════════════════ */
+  .cat-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 14px;
+    scrollbar-width: none;
+  }
+  .cat-scroll::-webkit-scrollbar { display: none; }
+
+  .cat-chip {
+    flex-shrink: 0;
+    background: var(--g2);
+    border: 1.5px solid var(--g4);
+    color: var(--dim);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+  }
+  .cat-chip:active { opacity: .7; }
+  .cat-chip.active {
+    border-color: var(--am);
+    color: var(--am);
+    background: rgba(245,197,24,.08);
+    font-weight: 600;
+  }
+
+  /* ════════════════════════════════════════
+     LISTA DE TRABAJOS
+  ════════════════════════════════════════ */
+  .trabajos-lista {
+    background: var(--g1);
+    border-radius: var(--radio);
+    overflow: hidden;
+    border: 1px solid var(--g3);
+    margin-bottom: 24px;
+  }
+
+  /* Cada item: nombre + precio arriba, qty abajo */
+  .t-item {
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid var(--g2);
+    transition: background .1s;
+  }
+  .t-item:last-child { border-bottom: none; }
+  .t-item:active { background: rgba(245,197,24,.04); }
+
+  .t-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .t-info { flex: 1; min-width: 0; }
+  .t-nombre {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--txt);
+    line-height: 1.35;
+    margin-bottom: 3px;
+  }
+  .t-detalle {
+    font-size: 11.5px;
+    color: var(--dim);
+    line-height: 1.4;
+  }
+
+  .t-precio-wrap { text-align: right; flex-shrink: 0; }
+  .t-precio {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--am);
+    letter-spacing: .5px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .t-unidad {
+    font-size: 10px;
+    color: var(--dim);
+    white-space: nowrap;
+    display: block;
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  /* Fila inferior: qty control */
+  .t-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .qty-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--g3);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .qty-btn {
+    width: 40px; height: 40px;
+    background: transparent;
+    border: none;
+    color: var(--txt);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    transition: background .12s;
+    /* área táctil grande */
+    touch-action: manipulation;
+  }
+  .qty-btn:active { background: var(--am); color: var(--negro); }
+
+  .qty-val {
+    min-width: 36px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--txt);
+    user-select: none;
+  }
+  .qty-val.nonzero { color: var(--am); }
+
+  /* ════════════════════════════════════════
+     BARRA INFERIOR FIJA (mobile) — muestra total + botón abrir drawer
+  ════════════════════════════════════════ */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--bar-h);
+    background: var(--g2);
+    border-top: 2px solid var(--am);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    z-index: 300;
+  }
+
+  .bar-total-wrap { flex: 1; }
+  .bar-total-label {
+    font-size: 10px;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .bar-total-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: var(--verde);
+    line-height: 1;
+    letter-spacing: .5px;
+  }
+
+  .bar-open-btn {
+    background: var(--am);
+    border: none;
+    color: var(--negro);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    padding: 0 18px;
+    height: 44px;
+    border-radius: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    touch-action: manipulation;
+  }
+
+  /* ════════════════════════════════════════
+     DRAWER DE PRESUPUESTO (mobile)
+  ════════════════════════════════════════ */
+  .drawer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 400;
+  }
+  .drawer-overlay.open { display: block; }
+
+  .drawer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--g2);
+    border-radius: 18px 18px 0 0;
+    border-top: 2px solid var(--am);
+    padding: 0 16px 24px;
+    z-index: 500;
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .drawer.open { transform: translateY(0); }
+
+  .drawer-handle {
+    width: 40px; height: 4px;
+    background: var(--g4);
+    border-radius: 2px;
+    margin: 12px auto 14px;
+    flex-shrink: 0;
+  }
+
+  .drawer-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+  }
+  .drawer-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--am);
+  }
+  .drawer-close {
+    background: none; border: none;
+    color: var(--dim); font-size: 22px;
+    cursor: pointer; line-height: 1;
+    padding: 4px 8px;
+  }
+
+  .drawer-items {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .presup-empty {
+    color: var(--dim);
+    font-size: 13px;
+    text-align: center;
+    padding: 24px 0;
+  }
+
+  .presup-item {
+    background: var(--g1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    grid-template-rows: auto auto;
+    gap: 2px 10px;
+    align-items: center;
+  }
+  .pi-nombre {
+    font-size: 13px;
+    color: var(--txt);
+    grid-column: 1;
+    grid-row: 1;
+    line-height: 1.3;
+  }
+  .pi-qty {
+    font-size: 11px;
+    color: var(--dim);
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .pi-precio {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--am);
+    grid-column: 2;
+    grid-row: 1 / 3;
+    letter-spacing: .5px;
+    white-space: nowrap;
+    align-self: center;
+  }
+  .pi-remove {
+    background: none; border: none;
+    color: var(--dim); cursor: pointer;
+    font-size: 16px;
+    grid-column: 3;
+    grid-row: 1 / 3;
+    align-self: center;
+    padding: 4px;
+    line-height: 1;
+  }
+  .pi-remove:active { color: var(--rojo); }
+
+  .drawer-divider {
+    border: none; border-top: 1px solid var(--g4);
+    margin: 0 0 12px;
+    flex-shrink: 0;
+  }
+
+  .drawer-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+  }
+  .drawer-total-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: var(--dim);
+  }
+  .drawer-total-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 34px;
+    color: var(--verde);
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .drawer-nota {
+    font-size: 10.5px;
+    color: var(--dim);
+    line-height: 1.5;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+  }
+  .drawer-nota a { color: var(--am); }
+
+  .drawer-acciones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .drawer-acciones .btn-pdf { grid-column: 1 / 3; }
+
+  .btn-accion {
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    padding: 13px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: opacity .15s;
+  }
+  .btn-accion:active { opacity: .75; }
+  .btn-copiar  { background: var(--am);    color: var(--negro); }
+  .btn-wsp     { background: #25d366;      color: #fff; }
+  .btn-pdf     { background: #c0392b;      color: #fff; }
+  .btn-limpiar {
+    background: none;
+    border: 1px solid var(--g4);
+    color: var(--dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0;
+    padding: 13px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    grid-column: 1 / 3;
+    touch-action: manipulation;
+  }
+  .btn-limpiar:active { color: var(--rojo); border-color: var(--rojo); }
+
+  /* ════════════════════════════════════════
+     DESKTOP (≥ 700px): sidebar layout
+  ════════════════════════════════════════ */
+  @media (min-width: 700px) {
+    body { padding-bottom: 0; }
+
+    .bottom-bar { display: none; }
+    .drawer-overlay { display: none !important; }
+
+    .drawer {
+      /* En desktop es un panel estático, no drawer */
+      position: static;
+      transform: none !important;
+      border-radius: var(--radio);
+      border: 1.5px solid var(--am);
+      max-height: none;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+
+    .drawer-handle { display: none; }
+    .drawer-close  { display: none; }
+
+    .page {
+      padding: 20px 20px 32px;
+    }
+
+    .desktop-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .desktop-main {}
+    .desktop-side {
+      position: sticky;
+      top: calc(var(--header-h) + 16px);
+    }
+
+    /* En desktop los botones van en columna */
+    .drawer-acciones {
+      grid-template-columns: 1fr;
+    }
+    .drawer-acciones .btn-pdf { grid-column: 1; }
+    .btn-limpiar { grid-column: 1; }
+
+    .header-text h1 { font-size: 26px; }
+  }
+
+  /* ════════════════════════════════════════
+     TOAST
+  ════════════════════════════════════════ */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--verde);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity .25s, transform .25s;
+    z-index: 9999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (min-width: 700px) {
+    .toast { bottom: 24px; }
+  }
+
+  /* ════════════════════════════════════════
+     MODAL PRESUPUESTO
+  ════════════════════════════════════════ */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    z-index: 600;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--g2);
+    border: 1.5px solid var(--am);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--g4);
+    position: sticky;
+    top: 0;
+    background: var(--g2);
+    z-index: 1;
+    flex-shrink: 0;
+  }
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--am);
+  }
+  .modal-close {
+    background: none; border: none;
+    color: var(--dim); font-size: 22px;
+    cursor: pointer; line-height: 1; padding: 4px 8px;
+  }
+  .modal-close:hover { color: var(--txt); }
+
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+  .modal-section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--am);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--g3);
+  }
+
+  .form-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 480px) {
+    .form-grid.cols2 { grid-template-columns: 1fr 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11.5px; color: var(--dim); letter-spacing: .3px; }
+  .field input, .field textarea {
+    background: var(--g1);
+    border: 1.5px solid var(--g4);
+    border-radius: 8px;
+    color: var(--txt);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color .15s;
+    width: 100%;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--am); }
+  .field textarea { resize: vertical; min-height: 72px; }
+
+  /* Logo uploader */
+  .logo-uploader {
+    border: 2px dashed var(--g4);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .logo-uploader:hover { border-color: var(--am); }
+  .logo-uploader input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .logo-preview {
+    max-height: 70px;
+    max-width: 100%;
+    object-fit: contain;
+    display: none;
+    margin: 0 auto 8px;
+  }
+  .logo-preview.visible { display: block; }
+  .logo-hint { font-size: 12px; color: var(--dim); }
+  .logo-hint strong { color: var(--am); display: block; margin-bottom: 3px; font-size: 13px; }
+  .logo-clear {
+    margin-top: 8px; font-size: 11px; color: var(--dim);
+    background: none; border: none; cursor: pointer; text-decoration: underline;
+    display: none;
+  }
+  .logo-clear.visible { display: inline-block; }
+  .logo-clear:hover { color: var(--rojo); }
+
+  .modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--g4);
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    background: var(--g2);
+  }
+  .btn-modal-print {
+    flex: 1;
+    background: #c0392b;
+    border: none;
+    color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    padding: 13px;
+    border-radius: 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .btn-modal-print:active { opacity: .8; }
+  .btn-modal-cancel {
+    background: none;
+    border: 1px solid var(--g4);
+    color: var(--dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 13px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .btn-modal-cancel:hover { color: var(--txt); border-color: var(--g4); }
+
+  /* ════════════════════════════════════════
+     PRINT
+  ════════════════════════════════════════ */
+  @media print {
+    @page { size: A4; margin: 18mm 16mm; }
+    body { background:#fff !important; color:#111 !important;
+           font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+           padding-bottom:0; }
+    body > *:not(#pdf-sheet) { display:none !important; }
+    #pdf-sheet { display:block !important; }
+    .pdf-item { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header>
+  <div class="bolt"></div>
+  <div class="header-text">
+    <h1>PresupuestoElec</h1>
+    <p>Mano de obra eléctrica</p>
+  </div>
+  <div class="header-source">
+    <a href="https://www.electroinstalador.com/paginas/p19-costos-de-mano-de-obra" target="_blank">Electro Instalador</a><br>
+    <span class="badge-ok">✓ Ene–Feb 2026</span>
+  </div>
+</header>
+
+<!-- ══════════════ MODAL PRESUPUESTO ══════════════ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">🖨️ Generar Presupuesto</div>
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- DATOS DEL ELECTRICISTA -->
+      <div>
+        <div class="modal-section-title">👷 Tus datos</div>
+        <div class="form-grid cols2">
+          <div class="field" style="grid-column:1/-1">
+            <label>Nombre / Razón social</label>
+            <input id="f-nombre" type="text" placeholder="Juan García Electricidad">
+          </div>
+          <div class="field">
+            <label>Teléfono</label>
+            <input id="f-tel" type="tel" placeholder="+54 11 1234-5678">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input id="f-email" type="email" placeholder="juan@email.com">
+          </div>
+          <div class="field">
+            <label>Matrícula habilitante</label>
+            <input id="f-matricula" type="text" placeholder="Ej: MAT-12345">
+          </div>
+          <div class="field">
+            <label>CUIT / DNI</label>
+            <input id="f-cuit" type="text" placeholder="20-12345678-9">
+          </div>
+        </div>
+
+        <!-- Logo -->
+        <div style="margin-top:14px;">
+          <label style="font-size:11.5px; color:var(--dim); display:block; margin-bottom:8px;">Logo (opcional)</label>
+          <div class="logo-uploader" id="logoUploader">
+            <input type="file" accept="image/*" id="logoInput" onchange="handleLogo(event)">
+            <img class="logo-preview" id="logoPreview" src="" alt="Logo">
+            <div class="logo-hint">
+              <strong>📎 Subir logo</strong>
+              PNG, JPG o SVG · máx. 2MB
+            </div>
+            <button class="logo-clear" id="logoClear" onclick="clearLogo(event)">Quitar logo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATOS DEL TRABAJO -->
+      <div>
+        <div class="modal-section-title">🏗️ Datos del trabajo</div>
+        <div class="form-grid cols2">
+          <div class="field" style="grid-column:1/-1">
+            <label>Nombre del cliente</label>
+            <input id="f-cliente" type="text" placeholder="María López">
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>Dirección de la obra</label>
+            <input id="f-direccion" type="text" placeholder="Av. Rivadavia 1234, CABA">
+          </div>
+          <div class="field">
+            <label>N° de presupuesto</label>
+            <input id="f-numpresup" type="text" placeholder="0001">
+          </div>
+          <div class="field">
+            <label>Validez del presupuesto</label>
+            <input id="f-validez" type="text" placeholder="15 días hábiles">
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>Condiciones de pago</label>
+            <input id="f-pago" type="text" placeholder="50% adelanto, 50% al finalizar">
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>Notas adicionales</label>
+            <textarea id="f-notas" placeholder="El presupuesto no incluye materiales. Los precios pueden variar según condiciones de acceso..."></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-modal-print" onclick="ejecutarImpresion()">🖨️ IMPRIMIR PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PÁGINA ══════════════ -->
+<div class="page">
+  <div class="desktop-grid">
+
+    <!-- ── COLUMNA PRINCIPAL ── -->
+    <div class="desktop-main">
+
+      <div class="intro">
+        Seleccioná tu zona, elegí las tareas y armá tu presupuesto al instante. Solo mano de obra — sin materiales ni viáticos.
+      </div>
+
+      <!-- ZONA -->
+      <div class="label">📍 Tu zona</div>
+      <div class="zona-scroll" id="zonaScroll"></div>
+      <div class="zona-info" id="zonaInfo"></div>
+
+      <!-- CATEGORÍAS -->
+      <div class="label">🔧 Tipo de trabajo</div>
+      <div class="cat-scroll" id="catScroll"></div>
+
+      <!-- LISTA TRABAJOS -->
+      <div class="trabajos-lista" id="trabajosLista"></div>
+
+    </div><!-- /desktop-main -->
+
+    <!-- ── SIDEBAR (desktop) / DRAWER (mobile) ── -->
+    <div class="desktop-side">
+      <div class="drawer" id="drawer">
+        <div class="drawer-handle"></div>
+        <div class="drawer-head">
+          <div class="drawer-title">📋 Presupuesto</div>
+          <button class="drawer-close" onclick="cerrarDrawer()">✕</button>
+        </div>
+        <div class="drawer-items" id="drawerItems">
+          <div class="presup-empty">Agregá tareas desde el listado</div>
+        </div>
+        <hr class="drawer-divider">
+        <div class="drawer-total">
+          <div class="drawer-total-label">TOTAL M. DE OBRA</div>
+          <div class="drawer-total-num" id="drawerTotal">$0</div>
+        </div>
+        <div class="drawer-nota">
+          ⚠️ No incluye materiales, impuestos ni viáticos.<br>
+          Ref: <a href="https://www.electroinstalador.com" target="_blank">electroinstalador.com</a>
+        </div>
+        <div class="drawer-acciones">
+          <button class="btn-accion btn-copiar"  onclick="copiarPresupuesto()">📋 COPIAR</button>
+          <button class="btn-accion btn-wsp"     onclick="enviarWhatsApp()">📲 WHATSAPP</button>
+          <button class="btn-accion btn-pdf"     onclick="imprimirPDF()">🖨️ IMPRIMIR PDF</button>
+          <button class="btn-limpiar"            onclick="limpiarPresupuesto()">Limpiar todo</button>
+        </div>
+      </div>
+    </div><!-- /desktop-side -->
+
+  </div><!-- /desktop-grid -->
+</div><!-- /page -->
+
+<!-- ══════════════ BARRA INFERIOR MOBILE ══════════════ -->
+<div class="bottom-bar">
+  <div class="bar-total-wrap">
+    <div class="bar-total-label">TOTAL M. DE OBRA</div>
+    <div class="bar-total-num" id="barTotal">$0</div>
+  </div>
+  <button class="bar-open-btn" onclick="abrirDrawer()">VER PRESUPUESTO ›</button>
+</div>
+
+<!-- ══════════════ OVERLAY ══════════════ -->
+<div class="drawer-overlay" id="overlay" onclick="cerrarDrawer()"></div>
+
+<!-- ══════════════ TOAST ══════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════ HOJA PDF ══════════════ -->
+<div id="pdf-sheet" style="display:none"></div>
+
+<script>
+// ============================================================
+// DATOS
+// ============================================================
+const ZONAS = [
+  { id: 'pais', nombre: 'Nacional / País', factor: 1.0, descripcion: 'Zona base (CABA, GBA, Santa Fe, Córdoba, etc.)' },
+  { id: 'caba', nombre: 'CABA', factor: 1.10, descripcion: '+10% respecto al promedio nacional' },
+  { id: 'gba', nombre: 'GBA', factor: 1.05, descripcion: '+5% respecto al promedio nacional' },
+  { id: 'cordoba', nombre: 'Córdoba', factor: 1.02, descripcion: 'Referencia provincial propia' },
+  { id: 'salta', nombre: 'Salta', factor: 0.95, descripcion: 'Referencia provincial propia' },
+  { id: 'catamarca', nombre: 'Catamarca', factor: 0.93, descripcion: 'Referencia provincial propia' },
+  { id: 'patagonia', nombre: 'Patagonia', factor: 1.15, descripcion: 'Neuquén, Río Negro, Chubut, Santa Cruz — +15%' },
+];
+
+const CATEGORIAS = [
+  { id: 'tablero',       nombre: '⚡ Tableros',           url: 'https://www.electroinstalador.com/paginas/p172-pais--cmo--tablero-domiciliario-y-comercial', actualizado: 'Ene–Feb 2026' },
+  { id: 'cableado',      nombre: '🔌 Cableado',           url: 'https://www.electroinstalador.com/paginas/p130-pais--cmo--cableado', actualizado: 'Ene–Feb 2026' },
+  { id: 'canalizacion',  nombre: '🏗️ Canalización',      url: 'https://www.electroinstalador.com/paginas/p136-pais--cmo--canalizacion-caneria', actualizado: 'Ene–Feb 2026' },
+  { id: 'luminarias',    nombre: '💡 Luminarias',         url: 'https://www.electroinstalador.com/paginas/p151-pais--cmo--colocacion-de-luminarias', actualizado: 'Ene–Feb 2026' },
+  { id: 'acometida',     nombre: '🏠 Acometidas',         url: 'https://www.electroinstalador.com/paginas/p127-pais--cmo--acometidas-y-medidores', actualizado: 'Ene–Feb 2026' },
+  { id: 'puesta_tierra', nombre: '🌍 Puesta a tierra',    url: 'https://www.electroinstalador.com/paginas/p169-pais--cmo--puesta-a-tierra', actualizado: 'Ene–Feb 2026' },
+  { id: 'mantenimiento', nombre: '🛠️ Mantenimiento',     url: 'https://www.electroinstalador.com/paginas/p160-pais--cmo--mantenimiento', actualizado: 'Ene–Feb 2026' },
+  { id: 'cctv',          nombre: '📷 CCTV',               url: 'https://www.electroinstalador.com/paginas/p148-pais--cmo--cctv', actualizado: 'Ene–Feb 2026' },
+  { id: 'proyecto',      nombre: '📐 Proyecto eléctrico', url: 'https://www.electroinstalador.com/paginas/p166-pais--cmo--proyecto-electrico', actualizado: 'Ene–Feb 2026' },
+];
+
+// PRECIOS VERIFICADOS DIRECTAMENTE DESDE LAS PÁGINAS FUENTE DE ELECTROINSTALADOR.COM
+const TRABAJOS = [
+  // TABLEROS — verificado: electroinstalador.com/paginas/p172 (Ene–Feb 2026)
+  { id: 't1',  cat: 'tablero', nombre: 'Fijación de gabinete de superficie (1–54 bocas)', detalle: 'Fijación a pared con tarugos Fischer', precio: 41600, unidad: 'por tablero' },
+  { id: 't2',  cat: 'tablero', nombre: 'Empotrado de gabinete en mampostería (1–24 bocas)', detalle: 'Perforado + fijación con mezcla cemento/arena', precio: 175200, unidad: 'por tablero' },
+  { id: 't3',  cat: 'tablero', nombre: 'Empotrado de gabinete en mampostería (25–54 bocas)', detalle: 'Perforado + fijación con mezcla cemento/arena', precio: 199600, unidad: 'por tablero' },
+  { id: 't4',  cat: 'tablero', nombre: 'Colocación termomagnética + diferencial — monofásico', detalle: 'Armado de tablero + conexión de protecciones', precio: 77400, unidad: 'por circuito' },
+  { id: 't5',  cat: 'tablero', nombre: 'Colocación termomagnética + diferencial — trifásico', detalle: 'Armado de tablero + conexión de protecciones', precio: 102000, unidad: 'por circuito' },
+  { id: 't6',  cat: 'tablero', nombre: 'Tablero corrección potencia monofásico hasta 2 Kvar', detalle: '', precio: 266400, unidad: 'por tablero' },
+  { id: 't7',  cat: 'tablero', nombre: 'Tablero corrección potencia trifásico hasta 10 Kvar', detalle: '', precio: 300600, unidad: 'por tablero' },
+  { id: 't8',  cat: 'tablero', nombre: 'Tablero corrección potencia trifásico hasta 20 Kvar', detalle: '', precio: 346700, unidad: 'por tablero' },
+  { id: 't9',  cat: 'tablero', nombre: 'Tablero trifásico con contactor hasta 20 Kvar', detalle: '', precio: 512600, unidad: 'por tablero' },
+  { id: 't10', cat: 'tablero', nombre: 'Tablero trifásico automático hasta 50 Kvar (6 pasos)', detalle: '', precio: 512600, unidad: 'por tablero' },
+  { id: 't11', cat: 'tablero', nombre: 'Tablero trifásico automático hasta 100 Kvar (6 pasos)', detalle: '', precio: 590600, unidad: 'por tablero' },
+
+  // CABLEADO — verificado: electroinstalador.com/paginas/p130 (Ene–Feb 2026)
+  { id: 'c1', cat: 'cableado', nombre: 'Cableado metálica embutida (1–50 bocas)', detalle: '~1h 50min por boca, hasta 5m en cañería', precio: 30200, unidad: 'por boca' },
+  { id: 'c2', cat: 'cableado', nombre: 'Cableado metálica embutida (51–100 bocas)', detalle: '', precio: 29200, unidad: 'por boca' },
+  { id: 'c3', cat: 'cableado', nombre: 'Cableado metálica embutida (101–500 bocas)', detalle: '', precio: 29000, unidad: 'por boca' },
+  { id: 'c4', cat: 'cableado', nombre: 'Cableado metálica a la vista (1–50 bocas)', detalle: '', precio: 29800, unidad: 'por boca' },
+  { id: 'c5', cat: 'cableado', nombre: 'Cableado plástica embutida (1–50 bocas)', detalle: '', precio: 30200, unidad: 'por boca' },
+  { id: 'c6', cat: 'cableado', nombre: 'Re-cableado (1–50 bocas)', detalle: '', precio: 39500, unidad: 'por boca' },
+  { id: 'c7', cat: 'cableado', nombre: 'Re-cableado (51–100 bocas)', detalle: '', precio: 37600, unidad: 'por boca' },
+  { id: 'c8', cat: 'cableado', nombre: 'Subterráneo 1x4mm² a 4x16mm²', detalle: 'Zanjeo 70cm, cama de arena, malla protección', precio: 19300, unidad: 'por metro' },
+  { id: 'c9', cat: 'cableado', nombre: 'Subterráneo 1x25mm² a 4x35mm²', detalle: '+30% suelos duros / +80% con rotura de piso', precio: 38700, unidad: 'por metro' },
+  { id: 'c10', cat: 'cableado', nombre: 'Subterráneo 1x35mm² a 4x70mm²', detalle: '', precio: 69300, unidad: 'por metro' },
+  { id: 'c11', cat: 'cableado', nombre: 'Bandeja portacable hasta 150mm — por metro de cable', detalle: '', precio: 9300, unidad: 'por metro' },
+  { id: 'c12', cat: 'cableado', nombre: 'Bandeja portacable 200/300mm — por metro de cable', detalle: '', precio: 9900, unidad: 'por metro' },
+
+  // CANALIZACIÓN — verificado: electroinstalador.com/paginas/p136 (Ene–Feb 2026)
+  { id: 'cn1', cat: 'canalizacion', nombre: 'Canalización embutida metálica (1–50 bocas)', detalle: '~1h 45min por boca', precio: 47000, unidad: 'por boca' },
+  { id: 'cn2', cat: 'canalizacion', nombre: 'Canalización embutida metálica (51–100 bocas)', detalle: '', precio: 46100, unidad: 'por boca' },
+  { id: 'cn3', cat: 'canalizacion', nombre: 'Canalización embutida metálica (101–500 bocas)', detalle: '', precio: 44900, unidad: 'por boca' },
+  { id: 'cn4', cat: 'canalizacion', nombre: 'Canalización embutida PVC (1–50 bocas)', detalle: '', precio: 46100, unidad: 'por boca' },
+  { id: 'cn5', cat: 'canalizacion', nombre: 'Canalización embutida PVC (51–100 bocas)', detalle: '', precio: 44900, unidad: 'por boca' },
+  { id: 'cn6', cat: 'canalizacion', nombre: 'Canalización a la vista metálica (1–50 bocas)', detalle: '', precio: 44900, unidad: 'por boca' },
+  { id: 'cn7', cat: 'canalizacion', nombre: 'Canalización a la vista PVC (1–50 bocas)', detalle: '', precio: 43900, unidad: 'por boca' },
+  { id: 'cn8', cat: 'canalizacion', nombre: 'Cañería metálica 3/4 en Durlock (1–50 bocas)', detalle: '', precio: 39100, unidad: 'por boca' },
+  { id: 'cn9', cat: 'canalizacion', nombre: 'Cañería PVC rígido 3/4 en Durlock (1–50 bocas)', detalle: '', precio: 35600, unidad: 'por boca' },
+
+  // LUMINARIAS — verificado: electroinstalador.com/paginas/p151 (Ene–Feb 2026)
+  { id: 'l1',  cat: 'luminarias', nombre: 'Aplique de 1 a 2 luces', detalle: '30 min de trabajo', precio: 25700, unidad: 'por luminaria' },
+  { id: 'l2',  cat: 'luminarias', nombre: 'Aplique de 3 a 5 luces', detalle: '45 min de trabajo', precio: 28800, unidad: 'por luminaria' },
+  { id: 'l3',  cat: 'luminarias', nombre: 'Colgante de 1 luz', detalle: '1 hora de trabajo', precio: 42100, unidad: 'por luminaria' },
+  { id: 'l4',  cat: 'luminarias', nombre: 'Colgante de 2 luces', detalle: '1:30 hs de trabajo', precio: 45200, unidad: 'por luminaria' },
+  { id: 'l5',  cat: 'luminarias', nombre: 'Farola de pared (1 luz)', detalle: '1h — incluye fotocélula', precio: 46200, unidad: 'por luminaria' },
+  { id: 'l6',  cat: 'luminarias', nombre: 'Farola de pared (2 luces)', detalle: '1:30h — incluye fotocélula', precio: 49300, unidad: 'por luminaria' },
+  { id: 'l7',  cat: 'luminarias', nombre: 'Artefacto tubo LED simple', detalle: '1 hora de trabajo', precio: 48300, unidad: 'por luminaria' },
+  { id: 'l8',  cat: 'luminarias', nombre: 'Artefacto tubo LED doble', detalle: '1:30 hs de trabajo', precio: 58600, unidad: 'por luminaria' },
+  { id: 'l9',  cat: 'luminarias', nombre: 'Luz de emergencia', detalle: '1 hora de trabajo', precio: 38000, unidad: 'por unidad' },
+  { id: 'l10', cat: 'luminarias', nombre: 'Brazo de alumbrado público', detalle: '3 horas — incluye fotocélula', precio: 162800, unidad: 'por unidad' },
+  { id: 'l11', cat: 'luminarias', nombre: 'Ventilador de techo sin luces', detalle: '1:30 hs de trabajo', precio: 90200, unidad: 'por unidad' },
+  { id: 'l12', cat: 'luminarias', nombre: 'Ventilador de techo con luces', detalle: '1:30 hs de trabajo', precio: 115800, unidad: 'por unidad' },
+
+  // ACOMETIDAS — verificado: electroinstalador.com/paginas/p127 (Ene–Feb 2026)
+  { id: 'a1', cat: 'acometida', nombre: 'Acometida monofásica hasta 10 kW (hasta 3m)', detalle: 'Cantaleteado de pared + empotrado caño doble aislación', precio: 190700, unidad: 'por acometida' },
+  { id: 'a2', cat: 'acometida', nombre: 'Acometida trifásica hasta 10 kW', detalle: '', precio: 272100, unidad: 'por acometida' },
+  { id: 'a3', cat: 'acometida', nombre: 'Acometida trifásica de 11 a 35 kW', detalle: '', precio: 353100, unidad: 'por acometida' },
+  { id: 'a4', cat: 'acometida', nombre: 'Acometida trifásica de 36 a 50 kW', detalle: '', precio: 515500, unidad: 'por acometida' },
+  { id: 'a5', cat: 'acometida', nombre: 'Medidor monofásico (1 medidor)', detalle: 'Incluye gabinete + protecciones + puesta a tierra', precio: 163200, unidad: 'por medidor' },
+  { id: 'a6', cat: 'acometida', nombre: 'Medidor trifásico (1 medidor)', detalle: 'Incluye gabinete + protecciones + puesta a tierra', precio: 185400, unidad: 'por medidor' },
+  { id: 'a7', cat: 'acometida', nombre: 'Caja de toma con entrada aérea', detalle: '', precio: 572600, unidad: 'por instalación' },
+  { id: 'a8', cat: 'acometida', nombre: 'Caja de toma con entrada subterránea', detalle: '', precio: 383400, unidad: 'por instalación' },
+  { id: 'a9', cat: 'acometida', nombre: 'Armado de pilar monofásico completo', detalle: 'Incluye supervisión albañil + tablero + jabalina', precio: 735000, unidad: 'por pilar' },
+  { id: 'a10', cat: 'acometida', nombre: 'Armado de pilar trifásico completo', detalle: 'Incluye supervisión albañil + tablero + jabalina', precio: 868000, unidad: 'por pilar' },
+
+  // PUESTA A TIERRA — verificado: electroinstalador.com/paginas/p169 (Ene–Feb 2026)
+  { id: 'pt1', cat: 'puesta_tierra', nombre: 'Hincado de jabalina 1,5m + caja de inspección', detalle: 'Incluye canaleta desde tablero + conexión', precio: 89400, unidad: 'por jabalina' },
+
+  // MANTENIMIENTO — verificado: electroinstalador.com/paginas/p160 (Ene–Feb 2026)
+  { id: 'm1', cat: 'mantenimiento', nombre: 'Emergencia Lun–Vie hasta 5 km', detalle: 'Tiempo mínimo 4 hs — incluye traslado + reparación', precio: 59300, unidad: 'por hora' },
+  { id: 'm2', cat: 'mantenimiento', nombre: 'Emergencia Lun–Vie hasta 10 km', detalle: 'Tiempo mínimo 4:30 hs', precio: 69800, unidad: 'por hora' },
+  { id: 'm3', cat: 'mantenimiento', nombre: 'Emergencia Lun–Vie hasta 20 km', detalle: 'Tiempo mínimo 5 hs', precio: 84200, unidad: 'por hora' },
+  { id: 'm4', cat: 'mantenimiento', nombre: 'Hora adicional Lun–Vie', detalle: '', precio: 22500, unidad: 'por hora' },
+  { id: 'm5', cat: 'mantenimiento', nombre: 'Emergencia Sáb/Dom/Feriado hasta 5 km', detalle: 'Tiempo mínimo 4 hs', precio: 82700, unidad: 'por hora' },
+  { id: 'm6', cat: 'mantenimiento', nombre: 'Emergencia Sáb/Dom/Feriado hasta 10 km', detalle: 'Tiempo mínimo 4:30 hs', precio: 104400, unidad: 'por hora' },
+  { id: 'm7', cat: 'mantenimiento', nombre: 'Emergencia Sáb/Dom/Feriado hasta 20 km', detalle: 'Tiempo mínimo 5 hs', precio: 129800, unidad: 'por hora' },
+  { id: 'm8', cat: 'mantenimiento', nombre: 'Hora adicional Sáb/Dom/Feriado', detalle: '', precio: 22900, unidad: 'por hora' },
+
+  // CCTV — verificado: electroinstalador.com/paginas/p148 (Ene–Feb 2026)
+  { id: 'cc1', cat: 'cctv', nombre: 'Cámara en superficie (sin canalización)', detalle: 'En superficie, cañería preexistente o cablecanal', precio: 75800, unidad: 'por cámara' },
+  { id: 'cc2', cat: 'cctv', nombre: 'Cámara con canalización (5m por cámara)', detalle: 'Incluye canalización + cableado + conexión a DVR', precio: 108800, unidad: 'por cámara' },
+  { id: 'cc3', cat: 'cctv', nombre: 'Sistema 3 cámaras en superficie', detalle: '', precio: 264600, unidad: 'por sistema' },
+  { id: 'cc4', cat: 'cctv', nombre: 'Sistema 6 cámaras en superficie', detalle: '', precio: 356100, unidad: 'por sistema' },
+  { id: 'cc5', cat: 'cctv', nombre: 'Sistema 12 cámaras en superficie', detalle: '', precio: 427300, unidad: 'por sistema' },
+  { id: 'cc6', cat: 'cctv', nombre: 'Sistema 3 cámaras con canalización', detalle: '', precio: 316400, unidad: 'por sistema' },
+  { id: 'cc7', cat: 'cctv', nombre: 'Sistema 6 cámaras con canalización', detalle: '', precio: 391900, unidad: 'por sistema' },
+  { id: 'cc8', cat: 'cctv', nombre: 'Sistema 12 cámaras con canalización', detalle: '', precio: 509600, unidad: 'por sistema' },
+
+  // PROYECTO ELÉCTRICO — verificado: electroinstalador.com/paginas/p166 (Ene–Feb 2026)
+  { id: 'pr1', cat: 'proyecto', nombre: 'Proyecto eléctrico hasta 25 bocas', detalle: 'Planos, esquemas unifilares, memoria técnica, cómputo', precio: 366800, unidad: 'por proyecto' },
+  { id: 'pr2', cat: 'proyecto', nombre: 'Proyecto eléctrico de 26 a 50 bocas', detalle: '', precio: 506100, unidad: 'por proyecto' },
+  { id: 'pr3', cat: 'proyecto', nombre: 'Proyecto eléctrico de 51 a 100 bocas', detalle: '', precio: 598100, unidad: 'por proyecto' },
+  { id: 'pr4', cat: 'proyecto', nombre: 'Proyecto eléctrico de 101 a 500 bocas', detalle: '', precio: 925900, unidad: 'por proyecto' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let zonaActual = 'pais';
+let catActual  = 'tablero';
+let presupuesto = [];
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  renderZonas();
+  renderCats();
+  renderTrabajos();
+  renderPresupuesto();
+}
+
+// ============================================================
+// DRAWER MOBILE
+// ============================================================
+function abrirDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function cerrarDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ============================================================
+// ZONAS
+// ============================================================
+function renderZonas() {
+  document.getElementById('zonaScroll').innerHTML = ZONAS.map(z => `
+    <button class="zona-chip ${z.id === zonaActual ? 'active' : ''}" onclick="selZona('${z.id}')">
+      ${z.nombre}
+    </button>
+  `).join('');
+
+  const zona  = ZONAS.find(z => z.id === zonaActual);
+  const pct   = ((zona.factor - 1) * 100).toFixed(0);
+  const signo = zona.factor > 1 ? '+' : '';
+  document.getElementById('zonaInfo').innerHTML =
+    `<strong>${zona.nombre}</strong> — Factor ${signo}${pct}% · ${zona.descripcion}`;
+}
+
+function selZona(id) {
+  zonaActual = id;
+  const factor = ZONAS.find(z => z.id === id).factor;
+  presupuesto = presupuesto.map(p => ({ ...p, precio_ajustado: Math.round(p.precio_base * factor) }));
+  renderZonas();
+  renderTrabajos();
+  renderPresupuesto();
+}
+
+// ============================================================
+// CATEGORÍAS
+// ============================================================
+function renderCats() {
+  document.getElementById('catScroll').innerHTML = CATEGORIAS.map(c => `
+    <button class="cat-chip ${c.id === catActual ? 'active' : ''}" onclick="selCat('${c.id}')">
+      ${c.nombre}
+    </button>
+  `).join('');
+}
+
+function selCat(id) {
+  catActual = id;
+  renderCats();
+  renderTrabajos();
+}
+
+// ============================================================
+// TRABAJOS
+// ============================================================
+function renderTrabajos() {
+  const factor   = ZONAS.find(z => z.id === zonaActual).factor;
+  const trabajos = TRABAJOS.filter(t => t.cat === catActual);
+
+  document.getElementById('trabajosLista').innerHTML = trabajos.map(t => {
+    const precio_adj = Math.round(t.precio * factor);
+    const en  = presupuesto.find(p => p.id === t.id);
+    const qty = en ? en.qty : 0;
+    const nom = t.nombre.replace(/'/g, "\\'");
+    const uni = t.unidad.replace(/'/g, "\\'");
+    return `
+    <div class="t-item">
+      <div class="t-top">
+        <div class="t-info">
+          <div class="t-nombre">${t.nombre}</div>
+          ${t.detalle ? `<div class="t-detalle">${t.detalle}</div>` : ''}
+        </div>
+        <div class="t-precio-wrap">
+          <div class="t-precio">${formatPeso(precio_adj)}</div>
+          <span class="t-unidad">${t.unidad}</span>
+        </div>
+      </div>
+      <div class="t-bottom">
+        <div class="qty-wrap">
+          <button class="qty-btn" onclick="cambiarQty('${t.id}',${t.precio},'${nom}','${uni}',-1)">−</button>
+          <div class="qty-val ${qty > 0 ? 'nonzero' : ''}">${qty}</div>
+          <button class="qty-btn" onclick="cambiarQty('${t.id}',${t.precio},'${nom}','${uni}',1)">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// PRESUPUESTO
+// ============================================================
+function cambiarQty(id, precio_base, nombre, unidad, delta) {
+  const factor       = ZONAS.find(z => z.id === zonaActual).factor;
+  const precio_ajust = Math.round(precio_base * factor);
+  const idx          = presupuesto.findIndex(p => p.id === id);
+
+  if (idx === -1) {
+    if (delta > 0) presupuesto.push({ id, nombre, precio_base, precio_ajustado: precio_ajust, qty: 1, unidad });
+  } else {
+    presupuesto[idx].qty += delta;
+    presupuesto[idx].precio_ajustado = precio_ajust;
+    if (presupuesto[idx].qty <= 0) presupuesto.splice(idx, 1);
+  }
+  renderTrabajos();
+  renderPresupuesto();
+}
+
+function eliminarItem(id) {
+  presupuesto = presupuesto.filter(p => p.id !== id);
+  renderTrabajos();
+  renderPresupuesto();
+}
+
+function limpiarPresupuesto() {
+  presupuesto = [];
+  renderTrabajos();
+  renderPresupuesto();
+}
+
+function renderPresupuesto() {
+  const total = presupuesto.reduce((s, p) => s + p.precio_ajustado * p.qty, 0);
+  const fmt   = formatPeso(total);
+
+  document.getElementById('barTotal').textContent    = fmt;
+  document.getElementById('drawerTotal').textContent = fmt;
+
+  const container = document.getElementById('drawerItems');
+  if (!presupuesto.length) {
+    container.innerHTML = '<div class="presup-empty">Agregá tareas desde el listado</div>';
+    return;
+  }
+  container.innerHTML = presupuesto.map(p => `
+    <div class="presup-item">
+      <div class="pi-nombre">${p.nombre}</div>
+      <div class="pi-qty">× ${p.qty} ${p.unidad}</div>
+      <div class="pi-precio">${formatPeso(p.precio_ajustado * p.qty)}</div>
+      <button class="pi-remove" onclick="eliminarItem('${p.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// ACCIONES
+// ============================================================
+function generarTexto() {
+  const zona  = ZONAS.find(z => z.id === zonaActual);
+  const total = presupuesto.reduce((s, p) => s + p.precio_ajustado * p.qty, 0);
+  let txt = `PRESUPUESTO DE MANO DE OBRA ELÉCTRICA\nZona: ${zona.nombre}\nFecha: ${new Date().toLocaleDateString('es-AR')}\n`;
+  txt += `─────────────────────────────────\n`;
+  presupuesto.forEach(p => {
+    txt += `• ${p.nombre}\n  ${p.qty} ${p.unidad} × ${formatPeso(p.precio_ajustado)} = ${formatPeso(p.precio_ajustado * p.qty)}\n`;
+  });
+  txt += `─────────────────────────────────\nTOTAL M. DE OBRA: ${formatPeso(total)}\n⚠️ Sin materiales, viáticos ni cargas sociales.\nRef: electroinstalador.com`;
+  return txt;
+}
+
+function copiarPresupuesto() {
+  if (!presupuesto.length) { showToast('Agregá tareas primero'); return; }
+  navigator.clipboard.writeText(generarTexto()).then(() => showToast('¡Copiado!'));
+}
+
+function enviarWhatsApp() {
+  if (!presupuesto.length) { showToast('Agregá tareas primero'); return; }
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(generarTexto())}`, '_blank');
+}
+
+// ============================================================
+// STORAGE — datos del electricista
+// ============================================================
+const STORAGE_KEY = 'electricista-datos';
+
+function guardarDatos() {
+  const datos = {
+    nombre:    document.getElementById('f-nombre').value,
+    tel:       document.getElementById('f-tel').value,
+    email:     document.getElementById('f-email').value,
+    matricula: document.getElementById('f-matricula').value,
+    cuit:      document.getElementById('f-cuit').value,
+    logo:      logoBase64,
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(datos)); } catch(e) {}
+}
+
+function cargarDatos() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.nombre)    document.getElementById('f-nombre').value    = d.nombre;
+    if (d.tel)       document.getElementById('f-tel').value       = d.tel;
+    if (d.email)     document.getElementById('f-email').value     = d.email;
+    if (d.matricula) document.getElementById('f-matricula').value = d.matricula;
+    if (d.cuit)      document.getElementById('f-cuit').value      = d.cuit;
+    if (d.logo)      aplicarLogo(d.logo);
+  } catch(e) {}
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+let numPresupuesto = 1;
+
+function abrirModal() {
+  if (!presupuesto.length) { showToast('Agregá tareas primero'); return; }
+  // Autocompletar número correlativo
+  const n = String(numPresupuesto).padStart(4, '0');
+  document.getElementById('f-numpresup').value = n;
+  cargarDatos();
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ============================================================
+// LOGO
+// ============================================================
+let logoBase64 = '';
+
+function handleLogo(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('El logo debe pesar menos de 2MB'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => aplicarLogo(ev.target.result);
+  reader.readAsDataURL(file);
+}
+
+function aplicarLogo(base64) {
+  logoBase64 = base64;
+  const img = document.getElementById('logoPreview');
+  img.src = base64;
+  img.classList.add('visible');
+  document.querySelector('.logo-hint').style.display = 'none';
+  document.getElementById('logoClear').classList.add('visible');
+}
+
+function clearLogo(e) {
+  e.stopPropagation();
+  logoBase64 = '';
+  const img = document.getElementById('logoPreview');
+  img.src = ''; img.classList.remove('visible');
+  document.querySelector('.logo-hint').style.display = '';
+  document.getElementById('logoClear').classList.remove('visible');
+  document.getElementById('logoInput').value = '';
+}
+
+// ============================================================
+// IMPRIMIR PDF — ahora con datos completos
+// ============================================================
+function imprimirPDF() {
+  abrirModal();
+}
+
+function ejecutarImpresion() {
+  guardarDatos();
+  numPresupuesto++;
+  cerrarModal();
+
+  const zona   = ZONAS.find(z => z.id === zonaActual);
+  const total  = presupuesto.reduce((s, p) => s + p.precio_ajustado * p.qty, 0);
+  const fecha  = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
+
+  // Datos del electricista
+  const elec = {
+    nombre:    document.getElementById('f-nombre').value    || '',
+    tel:       document.getElementById('f-tel').value       || '',
+    email:     document.getElementById('f-email').value     || '',
+    matricula: document.getElementById('f-matricula').value || '',
+    cuit:      document.getElementById('f-cuit').value      || '',
+  };
+  // Datos del trabajo
+  const trabajo = {
+    cliente:   document.getElementById('f-cliente').value   || '',
+    direccion: document.getElementById('f-direccion').value || '',
+    num:       document.getElementById('f-numpresup').value || '0001',
+    validez:   document.getElementById('f-validez').value   || '15 días hábiles',
+    pago:      document.getElementById('f-pago').value      || '',
+    notas:     document.getElementById('f-notas').value     || '',
+  };
+
+  // Limpiar campos de trabajo para la próxima vez
+  ['f-cliente','f-direccion','f-validez','f-pago','f-notas'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  const filas = presupuesto.map(p => `
+    <tr>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;font-size:10pt;color:#222;">${p.nombre}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:center;font-size:10pt;color:#555;">${p.qty}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;font-size:10pt;color:#333;">${formatPeso(p.precio_ajustado)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:600;font-size:10pt;color:#111;">${formatPeso(p.precio_ajustado * p.qty)}</td>
+    </tr>
+  `).join('');
+
+  const logoHtml = logoBase64
+    ? `<img src="${logoBase64}" style="max-height:60px;max-width:160px;object-fit:contain;display:block;">`
+    : `<div style="font-family:'Bebas Neue',sans-serif;font-size:22pt;color:#111;letter-spacing:2px;">PresupuestoElec</div>`;
+
+  const metaElec = [
+    elec.matricula && `Mat. ${elec.matricula}`,
+    elec.cuit      && `CUIT: ${elec.cuit}`,
+    elec.tel       && `☎ ${elec.tel}`,
+    elec.email     && `✉ ${elec.email}`,
+  ].filter(Boolean).join('  ·  ');
+
+  const condiciones = [
+    trabajo.validez && `<div><strong>Validez:</strong> ${trabajo.validez}</div>`,
+    trabajo.pago    && `<div><strong>Condiciones de pago:</strong> ${trabajo.pago}</div>`,
+    trabajo.notas   && `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #e0e0e0;"><strong>Notas:</strong> ${trabajo.notas}</div>`,
+  ].filter(Boolean).join('');
+
+  document.getElementById('pdf-sheet').innerHTML = `
+    <div style="font-family:'DM Sans',sans-serif;color:#111;max-width:720px;margin:0 auto;">
+
+      <!-- MEMBRETE -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #f5c518;padding-bottom:16px;margin-bottom:16px;">
+        <div>
+          ${logoHtml}
+          ${elec.nombre ? `<div style="font-size:13pt;font-weight:600;color:#111;margin-top:6px;">${elec.nombre}</div>` : ''}
+          ${metaElec    ? `<div style="font-size:8pt;color:#666;margin-top:3px;line-height:1.7;">${metaElec}</div>` : ''}
+        </div>
+        <div style="text-align:right;font-size:9pt;color:#666;line-height:1.8;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18pt;color:#111;letter-spacing:1px;line-height:1;">PRESUPUESTO</div>
+          <div><strong>N°</strong> ${trabajo.num}</div>
+          <div><strong>Fecha:</strong> ${fecha}</div>
+          <div><strong>Zona:</strong> ${zona.nombre}</div>
+        </div>
+      </div>
+
+      <!-- CLIENTE -->
+      ${(trabajo.cliente || trabajo.direccion) ? `
+      <div style="background:#f9f9f9;border-radius:6px;padding:12px 14px;margin-bottom:16px;font-size:9.5pt;">
+        <div style="font-size:8pt;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;">Cliente</div>
+        ${trabajo.cliente   ? `<div style="font-weight:600;font-size:11pt;color:#111;">${trabajo.cliente}</div>` : ''}
+        ${trabajo.direccion ? `<div style="color:#555;margin-top:2px;">📍 ${trabajo.direccion}</div>` : ''}
+      </div>` : ''}
+
+      <!-- TABLA -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+        <thead>
+          <tr style="background:#f5c518;">
+            <th style="padding:9px 10px;text-align:left;font-size:8.5pt;letter-spacing:1px;text-transform:uppercase;color:#111;">Descripción</th>
+            <th style="padding:9px 10px;text-align:center;font-size:8.5pt;letter-spacing:1px;text-transform:uppercase;color:#111;">Cant.</th>
+            <th style="padding:9px 10px;text-align:right;font-size:8.5pt;letter-spacing:1px;text-transform:uppercase;color:#111;">Precio unit.</th>
+            <th style="padding:9px 10px;text-align:right;font-size:8.5pt;letter-spacing:1px;text-transform:uppercase;color:#111;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+
+      <!-- TOTAL -->
+      <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+        <div style="background:#111;color:#f5c518;padding:14px 24px;border-radius:8px;text-align:right;min-width:220px;">
+          <div style="font-size:7.5pt;text-transform:uppercase;letter-spacing:2px;color:#aaa;margin-bottom:4px;">Total mano de obra</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26pt;letter-spacing:1px;line-height:1;">${formatPeso(total)}</div>
+          <div style="font-size:7.5pt;color:#aaa;margin-top:4px;">No incluye materiales</div>
+        </div>
+      </div>
+
+      <!-- CONDICIONES -->
+      ${condiciones ? `
+      <div style="background:#f9f9f9;border-left:3px solid #f5c518;padding:10px 14px;font-size:8.5pt;color:#555;line-height:1.7;border-radius:0 6px 6px 0;margin-bottom:16px;">
+        ${condiciones}
+      </div>` : ''}
+
+      <!-- PIE -->
+      <div style="border-top:1px solid #e0e0e0;padding-top:10px;font-size:7.5pt;color:#aaa;line-height:1.6;text-align:center;">
+        Valores de referencia según encuestas de <em>electroinstalador.com</em> — Para empresa unipersonal monotributista — No incluye materiales, impuestos ni cargas sociales
+      </div>
+
+    </div>
+  `;
+
+  setTimeout(() => window.print(), 100);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function formatPeso(n) {
+  return '$' + Math.round(n).toLocaleString('es-AR');
+}
+
+init();
+</script>
+</body>
+</html>
