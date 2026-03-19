@@ -173,21 +173,17 @@
 
   /* ══ CATEGORÍAS ══ */
   .cat-scroll {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 4px;
     margin-bottom: 16px;
-    scrollbar-width: none;
   }
-  .cat-scroll::-webkit-scrollbar { display: none; }
 
   .cat-chip {
-    flex-shrink: 0;
     background: var(--surface);
     border: 1.5px solid var(--border);
     color: var(--txt2);
-    padding: 8px 14px;
+    padding: 8px 12px;
     border-radius: 8px;
     font-size: 13px;
     font-family: 'Inter', sans-serif;
@@ -200,6 +196,8 @@
     align-items: center;
     gap: 5px;
     box-shadow: var(--shadow);
+    justify-content: center;
+    text-align: center;
   }
   .cat-chip:hover { border-color: var(--accent); color: var(--accent); }
   .cat-chip.active {
@@ -776,6 +774,203 @@
   }
   .btn-modal-cancel:hover { border-color: var(--txt3); }
 
+  /* ══ CUADRO IA ══ */
+  .ia-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radio);
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .ia-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+  .ia-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--txt);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ia-badge {
+    font-size: 10px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: .3px;
+  }
+  .ia-textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--txt);
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    padding: 10px 12px;
+    outline: none;
+    resize: none;
+    min-height: 80px;
+    line-height: 1.5;
+    transition: border-color .15s, box-shadow .15s;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .ia-textarea:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+    background: var(--surface);
+  }
+  .ia-textarea::placeholder { color: var(--txt3); }
+  .ia-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-ia {
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    border: none;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: opacity .15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .btn-ia:hover { opacity: .9; }
+  .btn-ia:disabled { opacity: .5; cursor: not-allowed; }
+  .ia-hint {
+    font-size: 11.5px;
+    color: var(--txt3);
+    line-height: 1.4;
+  }
+  .ia-resultado {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #166534;
+    line-height: 1.6;
+  }
+  .ia-resultado.visible { display: block; }
+  .ia-resultado.error {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+  .ia-spinner {
+    display: none;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  .ia-spinner.visible { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ══ MODAL CONFIG (API Key) ══ */
+  .cfg-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 700;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+  }
+  .cfg-overlay.open { display: flex; }
+  .cfg-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+  }
+  .cfg-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--txt);
+    margin-bottom: 6px;
+  }
+  .cfg-desc {
+    font-size: 12.5px;
+    color: var(--txt3);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .cfg-desc a { color: var(--accent); }
+  .cfg-input-wrap {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .cfg-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--txt);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+  }
+  .cfg-input:focus { border-color: var(--accent); }
+  .btn-cfg-save {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .cfg-nota {
+    font-size: 11px;
+    color: var(--txt3);
+    line-height: 1.5;
+  }
+  .cfg-nota a { color: var(--accent); }
+  .btn-cfg-close {
+    display: block;
+    margin-top: 14px;
+    width: 100%;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--txt2);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 9px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
   /* ══ PRINT ══ */
   @media print {
     @page { size: A4; margin: 18mm 16mm; }
@@ -801,7 +996,27 @@
     <a href="https://www.electroinstalador.com/paginas/p19-costos-de-mano-de-obra" target="_blank">Electro Instalador</a><br>
     <span class="badge-ok">✓ Ene–Feb 2026</span>
   </div>
+  <button onclick="abrirConfig()" title="Configurar API Key de IA" style="margin-left:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:var(--txt2);transition:all .15s;" onmouseover="this.style.borderColor='#7c3aed';this.style.color='#7c3aed'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--txt2)'">⚙️</button>
 </header>
+
+<!-- ══════════════ MODAL CONFIG API KEY ══════════════ -->
+<div class="cfg-overlay" id="cfgOverlay">
+  <div class="cfg-modal">
+    <div class="cfg-title">🤖 Configurar IA</div>
+    <div class="cfg-desc">
+      Ingresá tu API key de <a href="https://console.groq.com/keys" target="_blank">Groq</a> para activar el asistente inteligente. Se guarda solo en tu navegador y nunca se comparte.
+    </div>
+    <div class="cfg-input-wrap">
+      <input class="cfg-input" type="password" id="groqKeyInput" placeholder="gsk_...">
+      <button class="btn-cfg-save" onclick="guardarGroqKey()">Guardar</button>
+    </div>
+    <div class="cfg-nota">
+      🔒 La key se guarda en tu dispositivo únicamente.<br>
+      Groq ofrece un <a href="https://console.groq.com" target="_blank">plan gratuito</a> con límite generoso. Creá tu cuenta y copiá la key desde API Keys.
+    </div>
+    <button class="btn-cfg-close" onclick="cerrarConfig()">Cerrar</button>
+  </div>
+</div>
 
 <!-- ══════════════ MODAL PRESUPUESTO ══════════════ -->
 <div class="modal-overlay" id="modalOverlay">
@@ -903,6 +1118,26 @@
 
       <div class="intro">
         Seleccioná tu zona, elegí las tareas y armá tu presupuesto al instante. Solo mano de obra — sin materiales ni viáticos.
+      </div>
+
+      <!-- CUADRO IA -->
+      <div class="ia-box">
+        <div class="ia-header">
+          <div class="ia-title">
+            ✨ Describí el trabajo
+            <span class="ia-badge">IA</span>
+          </div>
+          <span id="iaKeyStatus" style="font-size:11px;color:var(--txt3)"></span>
+        </div>
+        <textarea class="ia-textarea" id="iaDescripcion" placeholder="Ej: Tengo que hacer la instalación eléctrica de un departamento de 3 ambientes. Necesito canalización embutida, tablero nuevo empotrado con 6 circuitos, y colocar 8 luminarias colgantes..."></textarea>
+        <div class="ia-footer">
+          <button class="btn-ia" id="btnIA" onclick="analizarConIA()">
+            <span class="ia-spinner" id="iaSpinner"></span>
+            <span id="iaBtnText">✨ Generar presupuesto</span>
+          </button>
+          <div class="ia-hint">La IA va a agregar automáticamente las tareas al presupuesto</div>
+        </div>
+        <div class="ia-resultado" id="iaResultado"></div>
       </div>
 
       <!-- ZONA -->
@@ -1280,8 +1515,183 @@ function enviarWhatsApp() {
 }
 
 // ============================================================
-// STORAGE — datos del electricista
+// CONFIG — GROQ API KEY
 // ============================================================
+const GROQ_KEY_STORAGE = 'groq-api-key';
+
+function abrirConfig() {
+  const key = localStorage.getItem(GROQ_KEY_STORAGE) || '';
+  document.getElementById('groqKeyInput').value = key;
+  document.getElementById('cfgOverlay').classList.add('open');
+}
+
+function cerrarConfig() {
+  document.getElementById('cfgOverlay').classList.remove('open');
+}
+
+function guardarGroqKey() {
+  const key = document.getElementById('groqKeyInput').value.trim();
+  if (!key.startsWith('gsk_')) {
+    showToast('La key debe empezar con gsk_');
+    return;
+  }
+  localStorage.setItem(GROQ_KEY_STORAGE, key);
+  cerrarConfig();
+  actualizarEstadoIA();
+  showToast('✓ API key guardada');
+}
+
+function actualizarEstadoIA() {
+  const key = localStorage.getItem(GROQ_KEY_STORAGE);
+  const el  = document.getElementById('iaKeyStatus');
+  if (key) {
+    el.textContent = '✓ IA activa';
+    el.style.color = 'var(--verde)';
+  } else {
+    el.innerHTML = '<a href="#" onclick="abrirConfig();return false;" style="color:var(--accent)">Configurar API key →</a>';
+  }
+}
+
+// ============================================================
+// IA — GROQ
+// ============================================================
+async function analizarConIA() {
+  const key  = localStorage.getItem(GROQ_KEY_STORAGE);
+  if (!key) {
+    abrirConfig();
+    showToast('Primero configurá tu API key de Groq');
+    return;
+  }
+
+  const descripcion = document.getElementById('iaDescripcion').value.trim();
+  if (!descripcion) {
+    showToast('Describí el trabajo primero');
+    return;
+  }
+
+  // UI loading
+  const btn     = document.getElementById('btnIA');
+  const spinner = document.getElementById('iaSpinner');
+  const btnTxt  = document.getElementById('iaBtnText');
+  const resultado = document.getElementById('iaResultado');
+
+  btn.disabled = true;
+  spinner.classList.add('visible');
+  btnTxt.textContent = 'Analizando...';
+  resultado.className = 'ia-resultado';
+
+  // Construir el catálogo de trabajos disponibles para el prompt
+  const catalogo = TRABAJOS.map(t =>
+    `ID:${t.id} | ${t.nombre} | $${t.precio} ${t.unidad}`
+  ).join('\n');
+
+  const prompt = `Sos un asistente experto en presupuestos eléctricos argentinos.
+El electricista describió este trabajo:
+"${descripcion}"
+
+Tu tarea es identificar qué tareas del siguiente catálogo aplican para ese trabajo, y qué cantidad de cada una se necesita.
+
+CATÁLOGO DISPONIBLE:
+${catalogo}
+
+Respondé ÚNICAMENTE con un JSON válido, sin texto adicional, sin markdown, sin explicaciones. El formato exacto es:
+{
+  "tareas": [
+    {"id": "t1", "qty": 1, "razon": "breve motivo"},
+    {"id": "c1", "qty": 25, "razon": "breve motivo"}
+  ],
+  "resumen": "Una oración explicando el presupuesto"
+}
+
+Solo incluí tareas que claramente apliquen al trabajo descripto. Si la descripción no es clara, elegí las opciones más probables. La cantidad (qty) debe ser un número razonable según el contexto.`;
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        max_tokens: 1000,
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `Error ${response.status}`);
+    }
+
+    const data    = await response.json();
+    const content = data.choices?.[0]?.message?.content?.trim() || '';
+
+    // Parsear el JSON de respuesta
+    let parsed;
+    try {
+      // Limpiar posibles backticks que el modelo pueda agregar
+      const clean = content.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch {
+      throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+    }
+
+    const tareas = parsed.tareas || [];
+    if (!tareas.length) throw new Error('No se encontraron tareas para esa descripción.');
+
+    // Agregar las tareas al presupuesto
+    const factor = ZONAS.find(z => z.id === zonaActual).factor;
+    let agregadas = 0;
+
+    tareas.forEach(({ id, qty }) => {
+      const trabajo = TRABAJOS.find(t => t.id === id);
+      if (!trabajo || !qty || qty <= 0) return;
+
+      const precio_ajust = Math.round(trabajo.precio * factor);
+      const idx = presupuesto.findIndex(p => p.id === id);
+
+      if (idx === -1) {
+        presupuesto.push({
+          id,
+          nombre: trabajo.nombre,
+          precio_base: trabajo.precio,
+          precio_ajustado: precio_ajust,
+          qty: Math.round(qty),
+          unidad: trabajo.unidad
+        });
+      } else {
+        presupuesto[idx].qty += Math.round(qty);
+        presupuesto[idx].precio_ajustado = precio_ajust;
+      }
+      agregadas++;
+    });
+
+    renderTrabajos();
+    renderPresupuesto();
+
+    // Mostrar resumen
+    const total = presupuesto.reduce((s, p) => s + p.precio_ajustado * p.qty, 0);
+    resultado.className = 'ia-resultado visible';
+    resultado.innerHTML = `
+      <strong>✓ ${agregadas} tarea${agregadas !== 1 ? 's' : ''} agregada${agregadas !== 1 ? 's' : ''} al presupuesto</strong><br>
+      ${parsed.resumen || ''}<br>
+      <span style="font-weight:600;font-size:13px;">Total estimado: ${formatPeso(total)}</span>
+    `;
+
+  } catch (err) {
+    resultado.className = 'ia-resultado visible error';
+    resultado.textContent = `Error: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+    spinner.classList.remove('visible');
+    btnTxt.textContent = '✨ Generar presupuesto';
+  }
+}
+
+// Inicializar estado IA al cargar
+actualizarEstadoIA();
 const STORAGE_KEY = 'electricista-datos';
 
 function guardarDatos() {
